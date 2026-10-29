@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-orf_finder_simple.py - predict protein-coding ORFs in a bacterial genome.
+orf_finder.py - predict protein-coding ORFs in a bacterial genome.
 
 Steps:
   1. Find all ORFs in the six reading frames (start: ATG/GTG/TTG, stop: TAA/TAG/TGA),
@@ -11,13 +11,13 @@ Steps:
      and keep those with a positive score.
   4. Remove ORFs that overlap a higher-scoring ORF by more than 60 bp.
 
-Usage:  python orf_finder_simple.py genome.fasta -o predicted_orfs.tsv
-Requires Biopython.
+Usage:  python orf_finder.py genome.fna   (writes genome_orf_results.tsv; requires Biopython)
 """
 
 import argparse
 import math
 from collections import Counter
+from pathlib import Path
 
 from Bio import SeqIO
 from Bio.Seq import reverse_complement
@@ -151,7 +151,7 @@ def remove_overlaps(orfs, max_overlap):
 def main():
     parser = argparse.ArgumentParser(description="Predict ORFs in a bacterial genome.")
     parser.add_argument("fasta", help="genome in FASTA format")
-    parser.add_argument("-o", "--output", default="predicted_orfs.tsv")
+    parser.add_argument("-o", "--output", help="output table (default: <input name>_orf_results.tsv)")
     parser.add_argument("--alpha", type=float, default=0.01,
                         help="fraction of random ORFs allowed above the length cutoff (default 0.01)")
     parser.add_argument("--train-top", type=float, default=0.5,
@@ -159,6 +159,7 @@ def main():
     parser.add_argument("--max-overlap", type=int, default=60,
                         help="largest overlap (bp) allowed between two predicted ORFs (default 60)")
     args = parser.parse_args()
+    output = args.output or Path(args.fasta).stem + "_orf_results.tsv"
 
     # 1. all ORFs
     orfs, contigs = find_orfs(args.fasta)
@@ -187,12 +188,12 @@ def main():
 
     # output, sorted by position
     predicted.sort(key=lambda o: (o["contig"], o["left"]))
-    with open(args.output, "w") as out:
+    with open(output, "w") as out:
         out.write("contig\tstart\tend\tstrand\tlength_nt\tstart_codon\tscore\n")
         for o in predicted:
             out.write(f"{o['contig']}\t{o['left']}\t{o['right']}\t{o['strand']}\t"
                       f"{len(o['seq'])}\t{o['seq'][:3]}\t{o['score']:.1f}\n")
-    print(f"Predictions written to {args.output}")
+    print(f"Predictions written to {output}")
 
 
 if __name__ == "__main__":
