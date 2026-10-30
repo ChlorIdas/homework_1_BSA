@@ -1,0 +1,12 @@
+ORFfinder settings:
+Genetic code: -g 11 (bacterial)
+Start codons: -s 1 (ATG and alternative initiation codons)
+Minimum ORF length: -ml 75 nt (default)
+Nested ORFs: -n false (default, nested ORFs kept)
+Strand: -strand both (default)
+Output format: -outfmt 3 (feature table)
+
+Command:
+./ORFfinder -in GCF_000005845.2_ASM584v2_genomic.fna -g 11 -s 1 -outfmt 3 -out ecoli_orffinder.tbl
+
+Download: https://ftp.ncbi.nlm.nih.gov/genomes/TOOLS/ORFfinder/linux-i64/
