@@ -11,7 +11,7 @@ Steps:
      and keep those with a positive score.
   4. Remove ORFs that overlap a higher-scoring ORF by more than 60 bp.
 
-Usage:  python orf_finder.py genome.fna   (writes genome_orf_results.tsv; requires Biopython)
+Usage:  python orf_finder.py genome.fna [--fasta-out]   (writes genome_orf_results.tsv; requires Biopython)
 """
 
 import argparse
@@ -158,6 +158,8 @@ def main():
                         help="fraction of longest ORFs used to train the codon model (default 0.5)")
     parser.add_argument("--max-overlap", type=int, default=60,
                         help="largest overlap (bp) allowed between two predicted ORFs (default 60)")
+    parser.add_argument("--fasta-out", action="store_true",
+                        help="also write the predicted ORF sequences (DNA) as FASTA")
     args = parser.parse_args()
     output = args.output or Path(args.fasta).stem + "_orf_results.tsv"
 
@@ -194,6 +196,17 @@ def main():
             out.write(f"{o['contig']}\t{o['left']}\t{o['right']}\t{o['strand']}\t"
                       f"{len(o['seq'])}\t{o['seq'][:3]}\t{o['score']:.1f}\n")
     print(f"Predictions written to {output}")
+
+    # optional FASTA of the predicted ORFs (nucleotide, start codon to stop codon)
+    if args.fasta_out:
+        fasta_path = str(Path(output).with_suffix(".fasta"))
+        with open(fasta_path, "w") as out:
+            for o in predicted:
+                out.write(f">{o['contig']}:{o['left']}-{o['right']}({o['strand']}) "
+                          f"length={len(o['seq'])} score={o['score']:.1f}\n")
+                for i in range(0, len(o["seq"]), 60):
+                    out.write(o["seq"][i:i + 60] + "\n")
+        print(f"ORF sequences written to {fasta_path}")
 
 
 if __name__ == "__main__":
